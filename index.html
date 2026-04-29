@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>嵌入式工程师工具箱</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        * { box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            min-height: 100vh;
+        }
+        
+        .tool-card {
+            background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+            border-radius: 16px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        
+        .tool-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 16px 48px rgba(0, 0, 0, 0.15);
+        }
+        
+        .tool-icon {
+            font-size: 48px;
+            margin-bottom: 16px;
+        }
+        
+        .tool-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #1e293b;
+            margin-bottom: 8px;
+        }
+        
+        .tool-desc {
+            font-size: 14px;
+            color: #64748b;
+            line-height: 1.4;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
+            color: white;
+            padding: 2rem 0;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+        }
+        
+        .footer {
+            background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+            color: white;
+            padding: 2rem 0;
+            margin-top: 4rem;
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div class="container mx-auto px-4">
+            <div class="flex flex-col md:flex-row items-center justify-between">
+                <div class="text-center md:text-left mb-4 md:mb-0">
+                    <h1 class="text-4xl font-bold mb-2">🔧 嵌入式工程师工具箱</h1>
+                    <p class="text-lg opacity-90">专业的嵌入式开发工具集合</p>
+                </div>
+                <div class="flex items-center gap-4">
+                    <button class="bg-white text-blue-600 hover:bg-blue-50 px-4 py-2 rounded-lg font-medium transition">
+                        📚 文档
+                    </button>
+                    <button class="bg-blue-700 hover:bg-blue-800 text-white px-4 py-2 rounded-lg font-medium transition">
+                        ⭐ 收藏
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main class="container mx-auto px-4 py-8">
+        <section class="mb-8">
+            <div class="text-center mb-8">
+                <h2 class="text-3xl font-bold text-slate-800 mb-4">精选工具</h2>
+                <p class="text-slate-600 max-w-2xl mx-auto">
+                    为嵌入式工程师打造的专业工具，提高开发效率，简化调试流程
+                </p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <!-- 串口助手 -->
+                <div class="tool-card p-6 text-center" onclick="window.location.href='serial-assistant.html'">
+                    <div class="tool-icon">🔌</div>
+                    <h3 class="tool-title">串口助手</h3>
+                    <p class="tool-desc">
+                        支持串口通信、数据发送接收、十六进制/文本切换、循环发送等功能
+                    </p>
+                    <div class="mt-4 inline-block bg-blue-100 text-blue-600 px-3 py-1 rounded-full text-sm font-medium">
+                        常用工具
+                    </div>
+                </div>
+
+                <!-- 固件烧录工具 -->
+                <div class="tool-card p-6 text-center">
+                    <div class="tool-icon">💾</div>
+                    <h3 class="tool-title">固件烧录</h3>
+                    <p class="tool-desc">
+                        支持多种芯片的固件烧录，包括ST、NXP、Microchip等常见芯片
+                    </p>
+                    <div class="mt-4 inline-block bg-yellow-100 text-yellow-600 px-3 py-1 rounded-full text-sm font-medium">
+                        开发中
+                    </div>
+                </div>
+
+                <!-- 寄存器编辑器 -->
+                <div class="tool-card p-6 text-center">
+                    <div class="tool-icon">📝</div>
+                    <h3 class="tool-title">寄存器编辑器</h3>
+                    <p class="tool-desc">
+                        可视化编辑芯片寄存器，支持多种芯片型号的寄存器配置
+                    </p>
+                    <div class="mt-4 inline-block bg-yellow-100 text-yellow-600 px-3 py-1 rounded-full text-sm font-medium">
+                        开发中
+                    </div>
+                </div>
+
+                <!-- 协议分析器 -->
+                <div class="tool-card p-6 text-center">
+                    <div class="tool-icon">🔍</div>
+                    <h3 class="tool-title">协议分析</h3>
+                    <p class="tool-desc">
+                        分析常用通信协议，如I2C、SPI、CAN等协议的数据包
+                    </p>
+                    <div class="mt-4 inline-block bg-yellow-100 text-yellow-600 px-3 py-1 rounded-full text-sm font-medium">
+                        开发中
+                    </div>
+                </div>
+
+                <!-- 波形生成器 -->
+                <div class="tool-card p-6 text-center">
+                    <div class="tool-icon">📊</div>
+                    <h3 class="tool-title">波形生成</h3>
+                    <p class="tool-desc">
+                        生成各种波形信号，用于测试和调试硬件电路
+                    </p>
+                    <div class="mt-4 inline-block bg-yellow-100 text-yellow-600 px-3 py-1 rounded-full text-sm font-medium">
+                        开发中
+                    </div>
+                </div>
+
+                <!-- 代码生成器 -->
+                <div class="tool-card p-6 text-center">
+                    <div class="tool-icon">⚡</div>
+                    <h3 class="tool-title">代码生成</h3>
+                    <p class="tool-desc">
+                        根据配置自动生成嵌入式代码，支持多种编程语言和平台
+                    </p>
+                    <div class="mt-4 inline-block bg-yellow-100 text-yellow-600 px-3 py-1 rounded-full text-sm font-medium">
+                        开发中
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="bg-white rounded-2xl p-8 shadow-lg">
+            <h2 class="text-2xl font-bold text-slate-800 mb-4">关于工具箱</h2>
+            <p class="text-slate-600 mb-4">
+                嵌入式工程师工具箱是一个专为嵌入式开发人员设计的在线工具集合，旨在提高开发效率，简化调试流程。
+                目前已完成串口助手功能，后续将陆续添加更多实用工具。
+            </p>
+            <p class="text-slate-600 mb-4">
+                所有工具均基于现代Web技术开发，无需安装，直接在浏览器中使用，支持Chrome、Edge等现代浏览器。
+            </p>
+            <div class="flex flex-wrap gap-4 mt-6">
+                <div class="flex items-center gap-2 text-slate-600">
+                    <span class="text-green-500">✓</span>
+                    <span>无需安装</span>
+                </div>
+                <div class="flex items-center gap-2 text-slate-600">
+                    <span class="text-green-500">✓</span>
+                    <span>跨平台兼容</span>
+                </div>
+                <div class="flex items-center gap-2 text-slate-600">
+                    <span class="text-green-500">✓</span>
+                    <span>实时更新</span>
+                </div>
+                <div class="flex items-center gap-2 text-slate-600">
+                    <span class="text-green-500">✓</span>
+                    <span>完全免费</span>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="footer">
+        <div class="container mx-auto px-4">
+            <div class="flex flex-col md:flex-row justify-between items-center">
+                <div class="mb-4 md:mb-0">
+                    <h3 class="text-xl font-bold mb-2">🔧 嵌入式工程师工具箱</h3>
+                    <p class="text-slate-300 text-sm">专业的嵌入式开发工具集合</p>
+                </div>
+                <div class="flex gap-6">
+                    <a href="#" class="text-slate-300 hover:text-white transition">
+                        关于我们
+                    </a>
+                    <a href="#" class="text-slate-300 hover:text-white transition">
+                        使用文档
+                    </a>
+                    <a href="#" class="text-slate-300 hover:text-white transition">
+                        反馈建议
+                    </a>
+                </div>
+            </div>
+            <div class="border-t border-slate-700 mt-6 pt-6 text-center text-slate-400 text-sm">
+                © 2026 嵌入式工程师工具箱 | 保留所有权利
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // 页面加载动画
+        window.addEventListener('load', function() {
+            document.querySelectorAll('.tool-card').forEach((card, index) => {
+                setTimeout(() => {
+                    card.style.opacity = '1';
+                    card.style.transform = 'translateY(0)';
+                }, index * 100);
+            });
+        });
+    </script>
+</body>
+</html>

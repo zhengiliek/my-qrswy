@@ -1,0 +1,999 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>串口助手 - Web Serial</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        * { box-sizing: border-box; }
+        body { font-family: 'Segoe UI', system-ui, sans-serif; background: #f1f5f9; }
+        
+        .config-panel {
+            background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+            border-radius: 12px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        .config-panel:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+        
+        .receive-panel {
+            background: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+        
+        .send-panel {
+            background: #f8fafc;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+        
+        .status-bar {
+            background: linear-gradient(90deg, #1e40af, #3b82f6);
+            border-radius: 12px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+        
+        textarea { resize: none; }
+        textarea:focus { outline: none; }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 4px rgba(59, 130, 246, 0.3);
+        }
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(59, 130, 246, 0.4);
+        }
+        
+        .btn-danger {
+            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+            box-shadow: 0 2px 4px rgba(239, 68, 68, 0.3);
+        }
+        .btn-danger:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(239, 68, 68, 0.4);
+        }
+        
+        .btn-success {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            box-shadow: 0 2px 4px rgba(16, 185, 129, 0.3);
+        }
+        .btn-success:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(16, 185, 129, 0.4);
+        }
+        
+        .serial-log {
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 13px;
+            line-height: 1.6;
+            background: #0f172a;
+            color: #e2e8f0;
+            border-radius: 8px;
+            border: 1px solid #334155;
+        }
+        
+        input[type="number"]::-webkit-inner-spin-button,
+        input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+        
+        select, input[type="text"], input[type="number"] {
+            border: 2px solid #cbd5e1;
+            transition: all 0.3s ease;
+            border-radius: 8px;
+            box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.1);
+        }
+        select:focus, input:focus {
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+        
+        .checkbox-wrapper { display: flex; align-items: center; gap: 0.5rem; }
+        .checkbox-wrapper input[type="checkbox"] {
+            width: 18px; height: 18px; cursor: pointer; accent-color: #3b82f6;
+            transition: all 0.2s ease;
+        }
+        .checkbox-wrapper input[type="checkbox"]:hover {
+            transform: scale(1.1);
+        }
+        
+        .timestamp { color: #94a3b8; font-size: 12px; }
+        .hex-display { color: #22d3ee; }
+        .text-display { color: #86efac; }
+        .error-display { color: #f87171; }
+        
+        @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+        .connected-indicator { animation: blink 1.5s infinite; }
+        
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb { background: #94a3b8; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #64748b; }
+        
+        h1, h2, h3 {
+            font-weight: 600;
+            color: #1e293b;
+        }
+        
+        .card-header {
+            background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+            border-radius: 12px 12px 0 0;
+            padding: 12px 16px;
+        }
+        
+        .card-header h2 {
+            color: #ffffff;
+            margin: 0;
+            font-size: 16px;
+        }
+        
+        .card-body {
+            padding: 16px;
+        }
+        
+        .btn {
+            transition: all 0.3s ease;
+            border-radius: 8px;
+            font-weight: 500;
+        }
+        
+        .btn:hover {
+            transform: translateY(-1px);
+        }
+        
+        .grid gap-4 {
+            gap: 16px;
+        }
+        
+        .input-group {
+            margin-bottom: 12px;
+        }
+        
+        .input-group label {
+            display: block;
+            margin-bottom: 6px;
+            font-weight: 500;
+            color: #475569;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 12px;
+            margin: 16px 0;
+        }
+        
+        .stat-card {
+            background: #ffffff;
+            padding: 12px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            text-align: center;
+        }
+        
+        .stat-value {
+            font-size: 18px;
+            font-weight: 600;
+            color: #3b82f6;
+        }
+        
+        .stat-label {
+            font-size: 12px;
+            color: #64748b;
+            margin-top: 4px;
+        }
+        
+        .section-divider {
+            border-top: 1px solid #e2e8f0;
+            margin: 16px 0;
+            padding-top: 16px;
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-slate-50 to-slate-100 min-h-screen">
+    <div class="max-w-[1600px] mx-auto p-6">
+        <header class="mb-6 text-center">
+            <h1 class="text-3xl font-bold text-slate-800 mb-2">🔌 串口助手</h1>
+        </header>
+
+        <div class="grid grid-cols-12 gap-6">
+            <aside class="col-span-12 lg:col-span-3">
+                <div class="config-panel mb-6">
+                    <div class="card-header">
+                        <h2 class="flex items-center gap-2">
+                            <span>⚙️</span> 串口配置
+                        </h2>
+                    </div>
+                    <div class="card-body">
+                        
+                        <div class="grid grid-cols-2 gap-3">
+                            <div>
+                                <label class="block text-sm font-medium text-slate-600 mb-1">波特率</label>
+                                <select id="baudRate" class="w-full px-3 py-2 rounded-lg bg-white">
+                                    <option value="9600">9600</option>
+                                    <option value="19200">19200</option>
+                                    <option value="38400">38400</option>
+                                    <option value="57600">57600</option>
+                                    <option value="115200" selected>115200</option>
+                                    <option value="230400">230400</option>
+                                    <option value="460800">460800</option>
+                                    <option value="921600">921600</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-slate-600 mb-1">数据位</label>
+                                <select id="dataBits" class="w-full px-3 py-2 rounded-lg bg-white">
+                                    <option value="8" selected>8</option>
+                                    <option value="7">7</option>
+                                    <option value="6">6</option>
+                                    <option value="5">5</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-3">
+                            <div>
+                                <label class="block text-sm font-medium text-slate-600 mb-1">校验位</label>
+                                <select id="parity" class="w-full px-3 py-2 rounded-lg bg-white">
+                                    <option value="none" selected>无</option>
+                                    <option value="even">偶校验</option>
+                                    <option value="odd">奇校验</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-slate-600 mb-1">停止位</label>
+                                <select id="stopBits" class="w-full px-3 py-2 rounded-lg bg-white">
+                                    <option value="1" selected>1</option>
+                                    <option value="2">2</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="flex flex-col gap-3 mt-4">
+                            <button id="connectBtn" class="btn-primary w-full py-3 px-4 rounded-lg text-white font-medium text-center">
+                                🔗 连接串口
+                            </button>
+                            <button id="disconnectBtn" class="btn-danger w-full py-3 px-4 rounded-lg text-white font-medium text-center hidden">
+                                ⛓️ 断开连接
+                            </button>
+                        </div>
+
+                        <div class="border-t border-slate-300 pt-4 mt-4">
+                            <h3 class="text-sm font-semibold text-slate-700 mb-3">📡 接收设置</h3>
+                            <div class="space-y-2">
+                                <label class="checkbox-wrapper text-sm text-slate-600">
+                                    <input type="checkbox" id="showTimestamp" checked>
+                                    <span>显示时间戳</span>
+                                </label>
+                                <label class="checkbox-wrapper text-sm text-slate-600">
+                                    <input type="checkbox" id="autoScroll" checked>
+                                    <span>自动滚屏</span>
+                                </label>
+                                <label class="checkbox-wrapper text-sm text-slate-600">
+                                    <input type="checkbox" id="showHexDisplay" checked>
+                                    <span>十六进制显示</span>
+                                </label>
+                                <label class="checkbox-wrapper text-sm text-slate-600">
+                                    <input type="checkbox" id="showSendReceive" checked>
+                                    <span>显示发送和接收</span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="border-t border-slate-300 pt-4 mt-4">
+                            <h3 class="text-sm font-semibold text-slate-700 mb-3">🔄 循环发送</h3>
+                            <div class="flex items-center gap-2 mb-2">
+                                <label class="checkbox-wrapper text-sm text-slate-600">
+                                    <input type="checkbox" id="enableLoopSend">
+                                    <span>启用循环发送</span>
+                                </label>
+                                <input type="number" id="loopInterval" value="1000" min="100" max="60000" 
+                                    class="flex-1 px-3 py-2 rounded-lg bg-white text-center text-sm" placeholder="间隔(ms)">
+                            </div>
+                        </div>
+
+                        <div class="border-t border-slate-300 pt-4 mt-4">
+                            <h3 class="text-sm font-semibold text-slate-700 mb-3">📊 发送统计</h3>
+                            <div class="space-y-2 text-sm">
+                                <div class="flex justify-between">
+                                    <span class="text-slate-600">发送字节:</span>
+                                    <span id="sentBytes" class="font-semibold text-blue-600">0</span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span class="text-slate-600">发送次数:</span>
+                                    <span id="sentCount" class="font-semibold text-green-600">0</span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span class="text-slate-600">循环次数:</span>
+                                    <span id="loopCount" class="font-semibold text-purple-600">0</span>
+                                </div>
+                            </div>
+                            <button id="resetStatsBtn" class="w-full mt-4 bg-slate-500 hover:bg-slate-600 text-white py-3 px-4 rounded-lg font-medium transition text-center">
+                                🔄 重置统计
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+            </aside>
+
+            <main class="col-span-12 lg:col-span-6 space-y-6">
+                <div class="receive-panel overflow-hidden h-[470px]">
+                    <div class="card-header">
+                        <h2 class="flex items-center justify-between">
+                            <div class="flex items-center gap-2">
+                                <span>📥</span> 接收区
+                            </div>
+                            <div class="flex gap-2">
+                                <button id="clearReceiveBtn" class="bg-slate-600 hover:bg-slate-500 text-white text-sm px-3 py-1 rounded transition">
+                                    清空
+                                </button>
+                                <button id="saveReceiveBtn" class="bg-slate-600 hover:bg-slate-500 text-white text-sm px-3 py-1 rounded transition">
+                                    保存
+                                </button>
+                            </div>
+                        </h2>
+                    </div>
+                    <div id="receiveArea" class="serial-log h-[calc(100%-80px)] overflow-y-auto p-4"></div>
+                    <div class="px-4 py-2 bg-slate-100 flex items-center justify-between text-sm">
+                        <span class="text-slate-600">接收字节: <strong id="recvBytes" class="text-blue-600">0</strong></span>
+                        <span class="text-slate-600">接收行数: <strong id="recvLines" class="text-green-600">0</strong></span>
+                    </div>
+                </div>
+
+                <div class="send-panel overflow-hidden">
+                    <div class="card-header">
+                        <h2 class="flex items-center justify-between">
+                            <div class="flex items-center gap-2">
+                                <span>📤</span> 发送区
+                            </div>
+                            <div class="flex gap-2">
+                                <label class="checkbox-wrapper text-white text-sm">
+                                    <input type="checkbox" id="sendHex" checked>
+                                    <span>HEX</span>
+                                </label>
+                                <label class="checkbox-wrapper text-white text-sm">
+                                    <input type="checkbox" id="addNewline" checked>
+                                    <span>换行符</span>
+                                </label>
+                            </div>
+                        </h2>
+                    </div>
+                    <div class="card-body flex flex-col h-[calc(100%-48px)]">
+                        <textarea id="sendInput" rows="4" class="w-full px-3 py-2 rounded-lg border-2 border-slate-300 focus:border-blue-500 flex-1" 
+                            placeholder="输入要发送的数据... (支持十六进制如: FF 01 02 或 文本)"></textarea>
+                        <div class="mt-4 flex gap-3">
+                            <button id="sendBtn" class="btn-success flex-1 py-3 px-4 rounded-lg text-white font-medium text-center">
+                                🚀 发送
+                            </button>
+                            <button id="clearSendBtn" class="bg-slate-500 hover:bg-slate-600 flex-1 py-3 px-4 rounded-lg text-white font-medium transition text-center">
+                                🗑️ 清空
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </main>
+
+            <aside class="col-span-12 lg:col-span-3">
+                <div class="config-panel mb-6">
+                    <div class="card-header">
+                        <h2 class="flex items-center gap-2">
+                            <span>⚡</span> 多条发送
+                        </h2>
+                    </div>
+                    <div class="card-body flex flex-col h-[700px]">
+                        <div id="multiSendList" class="space-y-3 mb-4 flex-1 overflow-y-auto">
+                            <!-- 多条发送项将在这里动态生成 -->
+                        </div>
+                        <div class="flex gap-2 mb-3">
+                            <button id="addMultiSendBtn" class="btn-primary flex-1 py-2 px-4 rounded-lg text-white font-medium text-center">
+                                ➕ 添加
+                            </button>
+                            <button id="startMultiLoopBtn" class="bg-slate-500 hover:bg-slate-600 flex-1 py-2 px-4 rounded-lg text-white font-medium transition text-center">
+                                🔄 循环发送
+                            </button>
+                        </div>
+                        <div class="flex items-center gap-2 mb-3">
+                            <input type="number" id="multiLoopInterval" value="1000" min="100" max="60000" 
+                                class="flex-1 px-3 py-2 rounded-lg bg-white text-center text-sm" placeholder="周期(ms)">
+                            <button id="stopMultiLoopBtn" class="bg-red-500 hover:bg-red-600 flex-1 py-2 px-4 rounded-lg text-white font-medium transition text-center">
+                                ⏹️ 停止
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </aside>
+
+        </div>
+
+        <footer class="status-bar mt-6 px-4 py-3 flex items-center justify-between text-white shadow-md">
+            <div class="flex items-center gap-4">
+                <span id="connectionStatus" class="flex items-center gap-2">
+                    <span class="w-3 h-3 rounded-full bg-red-500"></span>
+                    <span>未连接</span>
+                </span>
+                <span id="portInfo" class="text-sm opacity-80"></span>
+            </div>
+            <div class="flex items-center gap-4 text-sm">
+                <span>© 2026 Web Serial Assistant</span>
+                <span>|</span>
+                <span>Chrome/Edge 90+ 支持</span>
+            </div>
+        </footer>
+    </div>
+
+    <script>
+        class SerialAssistant {
+            constructor() {
+                this.port = null;
+                this.reader = null;
+                this.isConnected = false;
+                this.isReading = false;
+                this.loopTimer = null;
+                this.lineNumber = 0;
+                this.stats = { sentBytes: 0, sentCount: 0, loopCount: 0, recvBytes: 0, recvLines: 0 };
+                
+                this.loadConfig();
+                this.initElements();
+                this.initEventListeners();
+                this.renderMultiSendItems();
+            }
+
+            loadConfig() {
+                this.config = JSON.parse(localStorage.getItem('serialConfig') || '{}');
+            }
+
+            saveConfig() {
+                localStorage.setItem('serialConfig', JSON.stringify(this.config));
+            }
+
+            initElements() {
+                this.baudRate = document.getElementById('baudRate');
+                this.dataBits = document.getElementById('dataBits');
+                this.parity = document.getElementById('parity');
+                this.stopBits = document.getElementById('stopBits');
+                this.connectBtn = document.getElementById('connectBtn');
+                this.disconnectBtn = document.getElementById('disconnectBtn');
+                this.receiveArea = document.getElementById('receiveArea');
+                this.sendInput = document.getElementById('sendInput');
+                this.sendBtn = document.getElementById('sendBtn');
+                this.clearReceiveBtn = document.getElementById('clearReceiveBtn');
+                this.clearSendBtn = document.getElementById('clearSendBtn');
+                this.showTimestamp = document.getElementById('showTimestamp');
+                this.autoScroll = document.getElementById('autoScroll');
+                this.showHexDisplay = document.getElementById('showHexDisplay');
+                this.showSendReceive = document.getElementById('showSendReceive');
+                this.enableLoopSend = document.getElementById('enableLoopSend');
+                this.loopInterval = document.getElementById('loopInterval');
+                this.sendHex = document.getElementById('sendHex');
+                this.addNewline = document.getElementById('addNewline');
+                
+                // 多条发送相关元素
+                this.multiSendList = document.getElementById('multiSendList');
+                this.addMultiSendBtn = document.getElementById('addMultiSendBtn');
+                this.startMultiLoopBtn = document.getElementById('startMultiLoopBtn');
+                this.stopMultiLoopBtn = document.getElementById('stopMultiLoopBtn');
+                this.multiLoopInterval = document.getElementById('multiLoopInterval');
+                
+                // 多条发送数据
+                this.multiSendItems = JSON.parse(localStorage.getItem('multiSendItems') || '[]');
+                this.multiLoopTimer = null;
+                this.currentMultiIndex = 0;
+            }
+
+            initEventListeners() {
+                this.connectBtn.addEventListener('click', () => this.connect());
+                this.disconnectBtn.addEventListener('click', () => this.disconnect());
+                this.sendBtn.addEventListener('click', () => this.sendData());
+                this.clearReceiveBtn.addEventListener('click', () => this.clearReceive());
+                this.clearSendBtn.addEventListener('click', () => this.clearSend());
+                this.enableLoopSend.addEventListener('change', (e) => this.toggleLoopSend(e.target.checked));
+                document.getElementById('resetStatsBtn').addEventListener('click', () => this.resetStats());
+                document.getElementById('saveReceiveBtn').addEventListener('click', () => this.saveReceiveData());
+                
+                // 多条发送事件监听器
+                this.addMultiSendBtn.addEventListener('click', () => this.addMultiSendItem());
+                this.startMultiLoopBtn.addEventListener('click', () => this.startMultiLoop());
+                this.stopMultiLoopBtn.addEventListener('click', () => this.stopMultiLoop());
+                
+                [this.baudRate, this.dataBits, this.parity, this.stopBits, this.showTimestamp, 
+                 this.autoScroll, this.showHexDisplay, this.showSendReceive].forEach(el => {
+                    el.addEventListener('change', () => this.saveCurrentConfig());
+                });
+                
+            }
+
+            async connect() {
+                try {
+                    const port = await navigator.serial.requestPort();
+                    const options = {
+                        baudRate: parseInt(this.baudRate.value),
+                        dataBits: parseInt(this.dataBits.value),
+                        parity: this.parity.value,
+                        stopBits: parseInt(this.stopBits.value)
+                    };
+                    
+                    await port.open(options);
+                    this.port = port;
+                    this.isConnected = true;
+                    
+                    this.updateConnectionUI(true);
+                    this.log('system', `已连接到串口 @ ${options.baudRate} bps`);
+                    
+                    this.startReading();
+                    this.saveCurrentConfig();
+                } catch (err) {
+                    this.log('error', '连接失败: ' + err.message);
+                }
+            }
+
+            async disconnect() {
+                try {
+                    this.isReading = false;
+                    
+                    if (this.reader) {
+                        this.reader.cancel();
+                        try {
+                            await this.reader.cancel();
+                        } catch (e) {}
+                        this.reader = null;
+                    }
+                    
+                    if (this.port) {
+                        try {
+                            await this.port.close();
+                        } catch (e) {}
+                        this.port = null;
+                    }
+                    
+                    this.isConnected = false;
+                    this.stopLoopSend();
+                    this.updateConnectionUI(false);
+                    this.log('system', '已断开串口连接');
+                } catch (err) {
+                    this.log('error', '断开失败: ' + err.message);
+                }
+            }
+
+            updateConnectionUI(connected) {
+                const statusEl = document.getElementById('connectionStatus');
+                const portInfo = document.getElementById('portInfo');
+                
+                if (connected) {
+                    statusEl.innerHTML = '<span class="w-3 h-3 rounded-full bg-green-500 connected-indicator"></span><span>已连接</span>';
+                    portInfo.textContent = `${this.baudRate.value} bps, ${this.dataBits.value}${this.parity.value.charAt(0)}${this.stopBits.value}`;
+                    this.connectBtn.classList.add('hidden');
+                    this.disconnectBtn.classList.remove('hidden');
+                } else {
+                    statusEl.innerHTML = '<span class="w-3 h-3 rounded-full bg-red-500"></span><span>未连接</span>';
+                    portInfo.textContent = '';
+                    this.connectBtn.classList.remove('hidden');
+                    this.disconnectBtn.classList.add('hidden');
+                }
+            }
+
+            async startReading() {
+                this.isReading = true;
+                while (this.port && this.port.readable && this.isReading) {
+                    this.reader = this.port.readable.getReader();
+                    try {
+                        while (this.isReading) {
+                            const { value, done } = await this.reader.read();
+                            if (done || !this.isReading) break;
+                            this.processReceivedData(value);
+                        }
+                    } catch (err) {
+                        if (err.name === 'AbortError' || !this.isReading) {
+                            break;
+                        }
+                        this.log('error', '读取错误: ' + err.message);
+                    } finally {
+                        if (this.reader) {
+                            try {
+                                this.reader.releaseLock();
+                            } catch (e) {}
+                            this.reader = null;
+                        }
+                    }
+                    
+                    if (!this.isReading) break;
+                }
+                this.isReading = false;
+            }
+
+            processReceivedData(data) {
+                const bytes = new Uint8Array(data);
+                this.stats.recvBytes += bytes.length;
+                document.getElementById('recvBytes').textContent = this.stats.recvBytes;
+                
+                const isHex = this.showHexDisplay.checked;
+                const showTs = this.showTimestamp.checked;
+                const showSendRecv = this.showSendReceive.checked;
+                
+                let text = '';
+                if (isHex) {
+                    text = Array.from(bytes).map(b => b.toString(16).padStart(2, '0').toUpperCase()).join(' ');
+                } else {
+                    text = new TextDecoder().decode(bytes);
+                }
+                
+                this.lineNumber++;
+                if (showSendRecv) {
+                    const lineNum = String(this.lineNumber).padStart(4, '0');
+                    this.log('hex', `[接收] ${text}`);
+                } else {
+                    this.log(isHex ? 'hex' : 'text', text);
+                }
+                
+                this.stats.recvLines++;
+                document.getElementById('recvLines').textContent = this.stats.recvLines;
+            }
+
+            async sendData() {
+                if (!this.isConnected || !this.port) {
+                    this.log('error', '请先连接串口');
+                    return;
+                }
+                
+                let data = this.sendInput.value.trim();
+                if (!data) return;
+                
+                try {
+                    let bytes;
+                    if (this.sendHex.checked) {
+                        bytes = this.hexStringToBytes(data);
+                    } else {
+                        bytes = new TextEncoder().encode(data);
+                    }
+                    
+                    if (this.addNewline.checked) {
+                        const withNewline = new Uint8Array(bytes.length + 2);
+                        withNewline.set(bytes);
+                        withNewline.set([0x0D, 0x0A], bytes.length);
+                        bytes = withNewline;
+                    }
+                    
+                    const writer = this.port.writable.getWriter();
+                    await writer.write(bytes);
+                    writer.releaseLock();
+                    
+                    this.stats.sentBytes += bytes.length;
+                    this.stats.sentCount++;
+                    this.updateStats();
+                    
+                    // 显示发送数据
+                    const showSendRecv = this.showSendReceive.checked;
+                    if (showSendRecv) {
+                        let sendText = data;
+                        if (this.sendHex.checked) {
+                            sendText = data;
+                        } else {
+                            sendText = data + (this.addNewline.checked ? '\r\n' : '');
+                        }
+                        this.log('send', `[发送] ${sendText}`);
+                    }
+                } catch (err) {
+                    this.log('error', '发送失败: ' + err.message);
+                }
+            }
+
+            hexStringToBytes(hex) {
+                hex = hex.replace(/\s+/g, '');
+                const bytes = [];
+                for (let i = 0; i < hex.length; i += 2) {
+                    bytes.push(parseInt(hex.substr(i, 2), 16));
+                }
+                return new Uint8Array(bytes);
+            }
+
+            log(type, message) {
+                const time = new Date().toLocaleTimeString('zh-CN', { hour12: false });
+                const p = document.createElement('div');
+                
+                let className = 'mb-1 break-all';
+                let prefix = '';
+                
+                switch(type) {
+                    case 'error':
+                        className += ' text-red-400';
+                        prefix = '❌ ';
+                        break;
+                    case 'system':
+                        className += ' text-yellow-400';
+                        prefix = '⚙️ ';
+                        break;
+                    case 'send':
+                        className += ' text-blue-400';
+                        prefix = '📤 ';
+                        break;
+                    case 'hex':
+                        className += ' text-cyan-300';
+                        prefix = '📥 ';
+                        break;
+                    case 'text':
+                        className += ' text-green-300';
+                        prefix = '📥 ';
+                        break;
+                    default:
+                        className += ' text-slate-300';
+                }
+                
+                if (this.showTimestamp.checked) {
+                    p.innerHTML = `<span class="timestamp">[${time}]</span> ${prefix}${this.escapeHtml(message)}`;
+                } else {
+                    p.innerHTML = `${prefix}${this.escapeHtml(message)}`;
+                }
+                
+                this.receiveArea.appendChild(p);
+                
+                // 自动滚屏
+                if (this.autoScroll.checked) {
+                    this.receiveArea.scrollTop = this.receiveArea.scrollHeight;
+                }
+            }
+
+            escapeHtml(text) {
+                const div = document.createElement('div');
+                div.textContent = text;
+                return div.innerHTML;
+            }
+
+            clearReceive() {
+                this.receiveArea.innerHTML = '';
+                this.lineNumber = 0;
+                this.stats.recvBytes = 0;
+                this.stats.recvLines = 0;
+                document.getElementById('recvBytes').textContent = '0';
+                document.getElementById('recvLines').textContent = '0';
+            }
+
+            clearSend() {
+                this.sendInput.value = '';
+            }
+
+            toggleLoopSend(enabled) {
+                if (enabled && this.isConnected) {
+                    this.startLoopSend();
+                } else {
+                    this.stopLoopSend();
+                }
+            }
+
+            startLoopSend() {
+                const interval = parseInt(this.loopInterval.value) || 1000;
+                this.loopTimer = setInterval(() => {
+                    this.sendData();
+                    this.stats.loopCount++;
+                    this.updateStats();
+                }, interval);
+                this.log('system', `循环发送已启动 (间隔: ${interval}ms)`);
+            }
+
+            stopLoopSend() {
+                if (this.loopTimer) {
+                    clearInterval(this.loopTimer);
+                    this.loopTimer = null;
+                    this.log('system', '循环发送已停止');
+                }
+            }
+
+            delay(ms) {
+                return new Promise(resolve => setTimeout(resolve, ms));
+            }
+
+            saveReceiveData() {
+                const content = this.receiveArea.innerText;
+                if (!content) {
+                    this.log('error', '没有可保存的数据');
+                    return;
+                }
+                
+                const blob = new Blob([content], { type: 'text/plain' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `serial_log_${new Date().toISOString().slice(0,19).replace(/:/g,'-')}.txt`;
+                a.click();
+                URL.revokeObjectURL(url);
+                this.log('system', '数据已保存');
+            }
+
+            updateStats() {
+                document.getElementById('sentBytes').textContent = this.stats.sentBytes;
+                document.getElementById('sentCount').textContent = this.stats.sentCount;
+                document.getElementById('loopCount').textContent = this.stats.loopCount;
+            }
+
+            resetStats() {
+                this.stats = { sentBytes: 0, sentCount: 0, loopCount: 0, recvBytes: 0, recvLines: 0 };
+                this.updateStats();
+                document.getElementById('recvBytes').textContent = '0';
+                document.getElementById('recvLines').textContent = '0';
+                this.log('system', '统计数据已重置');
+            }
+
+            saveCurrentConfig() {
+                this.config = {
+                    baudRate: this.baudRate.value,
+                    dataBits: this.dataBits.value,
+                    parity: this.parity.value,
+                    stopBits: this.stopBits.value,
+                    showTimestamp: this.showTimestamp.checked,
+                    autoScroll: this.autoScroll.checked,
+                    showHexDisplay: this.showHexDisplay.checked,
+                    showSendReceive: this.showSendReceive.checked,
+                    loopInterval: this.loopInterval.value
+                };
+                this.saveConfig();
+            }
+
+            // 多条发送相关方法
+            addMultiSendItem() {
+                const item = {
+                    id: Date.now(),
+                    data: '',
+                    hex: this.sendHex.checked,
+                    newline: this.addNewline.checked
+                };
+                this.multiSendItems.push(item);
+                this.saveMultiSendItems();
+                this.renderMultiSendItems();
+            }
+
+            saveMultiSendItems() {
+                localStorage.setItem('multiSendItems', JSON.stringify(this.multiSendItems));
+            }
+
+            renderMultiSendItems() {
+                this.multiSendList.innerHTML = '';
+                
+                if (this.multiSendItems.length === 0) {
+                    this.multiSendList.innerHTML = '<p class="text-sm text-slate-500 text-center py-4">暂无发送项</p>';
+                    return;
+                }
+                
+                this.multiSendItems.forEach((item, index) => {
+                    const itemEl = document.createElement('div');
+                    itemEl.className = 'bg-white p-3 rounded-lg border border-slate-200 shadow-sm';
+                    itemEl.innerHTML = `
+                        <div class="flex items-center gap-2 mb-2">
+                            <span class="text-sm font-medium text-slate-700">${index + 1}.</span>
+                            <input type="text" value="${this.escapeHtml(item.data)}" 
+                                class="flex-1 px-2 py-1 border border-slate-300 rounded text-sm"
+                                onchange="window.serialApp.updateMultiSendItem(${item.id}, this.value, 'data')">
+                        </div>
+                        <div class="flex items-center gap-4 text-xs">
+                            <label class="flex items-center gap-1">
+                                <input type="checkbox" ${item.hex ? 'checked' : ''}
+                                    onchange="window.serialApp.updateMultiSendItem(${item.id}, this.checked, 'hex')">
+                                <span>HEX</span>
+                            </label>
+                            <label class="flex items-center gap-1">
+                                <input type="checkbox" ${item.newline ? 'checked' : ''}
+                                    onchange="window.serialApp.updateMultiSendItem(${item.id}, this.checked, 'newline')">
+                                <span>换行</span>
+                            </label>
+                            <button type="button" class="text-red-500 hover:text-red-700 ml-auto"
+                                onclick="window.serialApp.removeMultiSendItem(${item.id})">&times;</button>
+                        </div>
+                    `;
+                    this.multiSendList.appendChild(itemEl);
+                });
+            }
+
+            updateMultiSendItem(id, value, field) {
+                const item = this.multiSendItems.find(item => item.id === id);
+                if (item) {
+                    item[field] = value;
+                    this.saveMultiSendItems();
+                }
+            }
+
+            removeMultiSendItem(id) {
+                this.multiSendItems = this.multiSendItems.filter(item => item.id !== id);
+                this.saveMultiSendItems();
+                this.renderMultiSendItems();
+            }
+
+            startMultiLoop() {
+                if (!this.isConnected || !this.port) {
+                    this.log('error', '请先连接串口');
+                    return;
+                }
+                
+                if (this.multiSendItems.length === 0) {
+                    this.log('error', '没有发送项');
+                    return;
+                }
+                
+                if (this.multiLoopTimer) {
+                    this.log('error', '循环发送已在运行');
+                    return;
+                }
+                
+                const interval = parseInt(this.multiLoopInterval.value) || 1000;
+                this.currentMultiIndex = 0;
+                
+                this.multiLoopTimer = setInterval(() => {
+                    this.sendMultiItemByIndex();
+                }, interval);
+                
+                this.log('system', `已开启循环发送 (周期: ${interval}ms)`);
+                this.startMultiLoopBtn.textContent = '🔄 已开启';
+                this.startMultiLoopBtn.classList.add('bg-green-600');
+                this.startMultiLoopBtn.classList.remove('bg-slate-500');
+            }
+
+            stopMultiLoop() {
+                if (this.multiLoopTimer) {
+                    clearInterval(this.multiLoopTimer);
+                    this.multiLoopTimer = null;
+                    this.log('system', '循环发送已停止');
+                    this.startMultiLoopBtn.textContent = '🔄 循环发送';
+                    this.startMultiLoopBtn.classList.remove('bg-green-600');
+                    this.startMultiLoopBtn.classList.add('bg-slate-500');
+                }
+            }
+
+            sendMultiItemByIndex() {
+                if (this.currentMultiIndex >= this.multiSendItems.length) {
+                    this.currentMultiIndex = 0;
+                }
+                
+                const item = this.multiSendItems[this.currentMultiIndex];
+                this.sendMultiItem(item, this.currentMultiIndex + 1);
+                this.currentMultiIndex++;
+            }
+
+            async sendMultiItem(item, index) {
+                try {
+                    let data = item.data.trim();
+                    if (!data) return;
+                    
+                    let bytes;
+                    if (item.hex) {
+                        bytes = this.hexStringToBytes(data);
+                    } else {
+                        bytes = new TextEncoder().encode(data);
+                    }
+                    
+                    if (item.newline) {
+                        const withNewline = new Uint8Array(bytes.length + 2);
+                        withNewline.set(bytes);
+                        withNewline.set([0x0D, 0x0A], bytes.length);
+                        bytes = withNewline;
+                    }
+                    
+                    const writer = this.port.writable.getWriter();
+                    await writer.write(bytes);
+                    writer.releaseLock();
+                    
+                    this.stats.sentBytes += bytes.length;
+                    this.stats.sentCount++;
+                    this.updateStats();
+                    
+                    if (this.showSendReceive.checked) {
+                        this.log('send', `[发送 ${index}] ${data}`);
+                    }
+                } catch (err) {
+                    this.log('error', `发送第 ${index} 条数据失败: ${err.message}`);
+                }
+            }
+
+            delay(ms) {
+                return new Promise(resolve => setTimeout(resolve, ms));
+            }
+
+        }
+
+        window.addEventListener('DOMContentLoaded', () => {
+            window.serialApp = new SerialAssistant();
+        });
+    </script>
+</body>
+</html>
